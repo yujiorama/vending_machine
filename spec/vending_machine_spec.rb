@@ -12,8 +12,9 @@ describe VendingMachine do
 
   describe "お金を1つだけ投入する場合" do
     it "10円" do
-      vending_machine.drop_in(10)
-      vending_machine.amount_of_drop_in.should == 10
+      money = 10
+      vending_machine.drop_in(money)
+      vending_machine.amount_of_drop_in.should == money
     end
   end
 end
