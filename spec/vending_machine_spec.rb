@@ -73,4 +73,10 @@ describe VendingMachine do
       end
     end
    end
+
+  describe "在庫を有無を確認する" do
+    it "在庫がない場合" do
+      vending_machine.stock?({:id => 1})
+    end
+  end
 end
