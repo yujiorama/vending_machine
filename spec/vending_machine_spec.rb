@@ -192,9 +192,16 @@ describe VendingMachine do
         vending_machine.purchaseable_drinks.should == [Drink::WATER]
       end
 
-      it "200円で購入可能な商品を表示する" do
+      it "80円自動販売機にお釣りを用意しておき、200円で購入可能な商品を表示する" do
+        vending_machine.refill_money_stock(Money::FIFTY, 1)
+        vending_machine.refill_money_stock(Money::TEN, 3)
         vending_machine.drop_in(Money::HUNDRED, Money::HUNDRED)
         vending_machine.purchaseable_drinks.should == [Drink::COKE, Drink::RED_BULL, Drink::WATER]
+      end
+
+      it "自動販売機にお釣りを用意せず、200円で購入可能な商品を表示する" do
+        vending_machine.drop_in(Money::HUNDRED, Money::HUNDRED)
+        vending_machine.purchaseable_drinks.should == [Drink::RED_BULL, Drink::WATER]
       end
 
 
@@ -204,10 +211,69 @@ describe VendingMachine do
   it "120円でコーラを買う" do
     vending_machine.refill_drink_stock(Drink::COKE, 5)
     vending_machine.drop_in(Money::HUNDRED, Money::TEN, Money::TEN)
+
     vending_machine.purchase(Drink::COKE)
+
     vending_machine.earnings.should == 120
     vending_machine.drink_stock(Drink::COKE).should == 4
   end
+
+  it "30円自動販売機にお釣りが用意してあり、150円でコーラを買う" do
+    vending_machine.refill_money_stock(Money::TEN, 3)
+    vending_machine.refill_drink_stock(Drink::COKE, 5)
+
+    vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
+  
+    vending_machine.purchase?(Drink::COKE).should be_true
+    vending_machine.changes_if_purchase(Drink::COKE)[0].money.should == Money::TEN
+    vending_machine.changes_if_purchase(Drink::COKE)[0].stock.should == 3
+
+    vending_machine.purchase(Drink::COKE)
+
+    vending_machine.earnings.should == 120
+    vending_machine.drink_stock(Drink::COKE).should == 4
+    vending_machine.amount_of_money_stocks.should == 150
+  end
+  
+ it "150円でコーラを買おうとするがお釣りがないので買えない、無理矢理買おうとしても無理＞＜" do
+    vending_machine.refill_drink_stock(Drink::COKE, 5)
+
+    vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
+  
+    vending_machine.purchase?(Drink::COKE).should be_false
+
+    proc {
+      vending_machine.purchase(Drink::COKE)
+    }.should raise_error(ArgumentError)
+  end
+
+
+  it "1000円5枚、硬貨は各10枚自動販売機にお釣りが用意してあり、150円でコーラを買う" do
+    vending_machine.refill_money_stock(Money::TEN, 10)
+    vending_machine.refill_money_stock(Money::FIFTY, 10)
+    vending_machine.refill_money_stock(Money::HUNDRED, 10)
+    vending_machine.refill_money_stock(Money::FIVE_HUNDRED, 10)
+    vending_machine.refill_money_stock(Money::THOUSAND, 5)
+
+    vending_machine.amount_of_money_stocks.should == 11600
+
+    vending_machine.refill_drink_stock(Drink::COKE, 5)
+    vending_machine.refill_drink_stock(Drink::RED_BULL, 5)
+    vending_machine.refill_drink_stock(Drink::WATER, 5)
+
+    vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
+  
+    vending_machine.purchase?(Drink::COKE).should be_true
+    vending_machine.changes_if_purchase(Drink::COKE)[0].money.should == Money::TEN
+    vending_machine.changes_if_purchase(Drink::COKE)[0].stock.should == 3
+
+    vending_machine.purchase(Drink::COKE)
+
+    vending_machine.earnings.should == 120
+    vending_machine.drink_stock(Drink::COKE).should == 4
+    vending_machine.amount_of_money_stocks.should == 11720
+  end
+
 
   it "240円でコーラを2本買う" do
     vending_machine.refill_drink_stock(Drink::COKE, 5)
@@ -219,4 +285,38 @@ describe VendingMachine do
     vending_machine.drink_stock(Drink::COKE).should == 3
   end
 
+
+
+  describe "お釣りの計算をする" do
+    context "お釣りが払える場合" do
+      it "30円自動販売機にあって、10円投入して、40円のお釣りが払える場合" do
+        vending_machine.refill_money_stock(Money::TEN, 3)
+        vending_machine.drop_in(Money::TEN, Money::TEN)
+
+        vending_machine.change?(40).should be_true
+        vending_machine.changes(40)[0].money.should == Money::TEN
+        vending_machine.changes(40)[0].stock.should == 4
+      end
+
+      it "50円自動販売機にあって、20円投入して、60円のお釣りが払える場合" do
+        vending_machine.refill_money_stock(Money::FIFTY, 1)
+        vending_machine.drop_in(Money::TEN, Money::TEN)
+
+        vending_machine.changes(60)[0].money.should == Money::FIFTY
+        vending_machine.changes(60)[0].stock.should == 1
+        vending_machine.changes(60)[1].money.should == Money::TEN
+        vending_machine.changes(60)[1].stock.should == 1
+        vending_machine.new_money_stock_after_change(60)[0].money.should == Money::TEN
+        vending_machine.new_money_stock_after_change(60)[0].stock.should == 1
+        end
+    end
+
+    context "お釣りが払えない場合" do
+      it "50円自動販売機にあって、30円のお釣りが払えない場合" do
+        vending_machine.refill_money_stock(Money::FIFTY, 1)
+
+        vending_machine.change?(30).should be_false
+      end
+    end
+  end
 end

@@ -71,6 +71,54 @@ class VendingMachine
     @earnings = 0
   end
 
+  def refill_money_stock(money, stock) 
+    find_money_stock(money).stock += stock
+  end
+
+  def change?(change)
+    change_helper(change)[0]
+  end
+
+  def changes(change)
+    change_helper(change)[1]
+  end
+
+  def new_money_stock_after_change(change)
+    change_helper(change)[2]
+  end
+
+  def change_helper(change)
+    current_total_money_stocks = create_current_total_money_stocks
+    new_money_stock = []
+
+    changes = []
+    remainder = change 
+    @valid_moneis.reverse.each {|money|
+      quotient = remainder / money.value
+      current_money_stock = current_total_money_stocks.find { |money_stock| money_stock.money == money }.stock
+      use_money_stock = [quotient, current_money_stock].min
+      changes << MoneyStock.new(money, use_money_stock) if use_money_stock > 0
+      new_money_stock << MoneyStock.new(money, current_money_stock - use_money_stock)
+      remainder -= (money.value * use_money_stock)
+    }
+    [remainder == 0, changes, new_money_stock.reverse]
+  end
+
+
+  def create_current_total_money_stocks
+    @money_stocks.zip(@drop_in_money_stocks).map {|item| 
+      MoneyStock.new(item[0].money, item[0].stock + item[1].stock) 
+    }
+  end
+
+  def find_money_stock(money)
+    @money_stocks.find { |money_stock| money_stock.money == money }
+  end
+
+  def amount_of_money_stocks
+    @money_stocks.inject(0) { |amount, money_stock| amount += money_stock.money.value * money_stock.stock }
+  end
+
   def amount_of_drop_in
     @drop_in_money_stocks.inject(0) { |amount, drop_in_money_stock| amount += drop_in_money_stock.money.value * drop_in_money_stock.stock }
   end
@@ -83,10 +131,6 @@ class VendingMachine
 
   def find_drop_in_money_stock(money)
     @drop_in_money_stocks.find { |money_stock| money_stock.money == money }
-  end
-
-  def findmoney_stock(money)
-    @money_stocks.find { |money_stock| money_stock.money == money }
   end
 
   def refill_drink_stock(drink, number_of_pieces) 
@@ -107,16 +151,26 @@ class VendingMachine
 
   def purchaseable_drinks
     @drink_stocks.inject([]) { |drinks, drink_stock| 
-      drinks << drink_stock.drink if drink_stock?(drink_stock.drink) && drink_stock.drink.value <= amount_of_drop_in() 
+      drinks << drink_stock.drink if drink_stock?(drink_stock.drink) && drink_stock.drink.value <= amount_of_drop_in() && change?(amount_of_drop_in - drink_stock.drink.value)
       drinks
     }
   end
 
-  def purchase(drink) 
-    raise ArgumentError, drink unless purchaseable_drinks.include?(drink)
+  def purchase?(drink)
+    purchaseable_drinks.include?(drink)
+  end
 
+  def changes_if_purchase(drink)
+    changes(amount_of_drop_in - drink.value) if purchase?(drink)
+  end
+
+
+  def purchase(drink) 
+    raise ArgumentError, drink unless purchase?(drink)
+    
+    @money_stocks = new_money_stock_after_change(amount_of_drop_in - drink.value)
+    @drop_in_money_stocks.each { |drop_in_money_stock| drop_in_money_stock.stock = 0 }
     find_drink_stock(drink).stock = drink_stock(drink) - 1
     @earnings += drink.value
-    @drop_in_money_stocks.each { |drop_in_money_stock| drop_in_money_stock.stock = 0 }
   end
 end
