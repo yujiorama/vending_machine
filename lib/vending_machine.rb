@@ -58,6 +58,7 @@ end
 
 class VendingMachine
   attr :earnings
+  attr :valid_monies
 
   def initialize
     @valid_moneis = [Money::TEN, Money::FIFTY, Money::HUNDRED, Money::FIVE_HUNDRED, Money::THOUSAND]
