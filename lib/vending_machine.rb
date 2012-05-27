@@ -85,6 +85,9 @@ class VendingMachine
     @drop_in_money_stocks.find { |money_stock| money_stock.money == money }
   end
 
+  def findmoney_stock(money)
+    @money_stocks.find { |money_stock| money_stock.money == money }
+  end
 
   def refill_drink_stock(drink, number_of_pieces) 
     find_drink_stock(drink).stock += number_of_pieces
