@@ -206,7 +206,7 @@ describe VendingMachine do
 
 
     end
-   end
+  end
 
   it "120円でコーラを買う" do
     vending_machine.refill_drink_stock(Drink::COKE, 5)
@@ -217,7 +217,7 @@ describe VendingMachine do
     vending_machine.earnings.should == 120
     vending_machine.drink_stock(Drink::COKE).should == 4
   end
-  
+
   it "当たり判定オン、コーラ在庫2個で、120円でコーラを買う、当たりなので、2個排出され、在庫ゼロ" do
     vending_machine.bingo_on = true
     vending_machine.refill_drink_stock(Drink::COKE, 2)
@@ -233,7 +233,7 @@ describe VendingMachine do
     vending_machine.earnings.should == 120
     vending_machine.drink_stock(Drink::COKE).should == 0
   end
-  
+
   it "当たり判定オン、コーラとレッドブルそれぞれ在庫2個で、120円でコーラを買う、当たりなので、2個排出され、在庫ゼロ、続けて200円でレッドブルを買い、同じく当たりなので、2個排出、在庫ゼロ、コーラとレッドブルが当たり、合計320円" do
     vending_machine.bingo_on = true
     vending_machine.refill_drink_stock(Drink::COKE, 2)
@@ -248,14 +248,14 @@ describe VendingMachine do
 
     vending_machine.drop_in(Money::HUNDRED, Money::HUNDRED)
     vending_machine.purchase(Drink::RED_BULL)
-    
+
     vending_machine.bingo_drink_numbers[0].drink.should == Drink::COKE
     vending_machine.bingo_drink_numbers[0].number.should == 1
     vending_machine.bingo_drink_numbers[1].drink.should == Drink::RED_BULL
     vending_machine.bingo_drink_numbers[1].number.should == 1
 
     vending_machine.amount_of_bingos.should == 320
-   end
+  end
 
 
   it "当たり判定オン、コーラ在庫2個で、120円でコーラを買う、はずれなので、1個排出され、在庫1" do
@@ -279,7 +279,7 @@ describe VendingMachine do
     vending_machine.refill_drink_stock(Drink::COKE, 5)
 
     vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
-  
+
     vending_machine.purchase?(Drink::COKE).should be_true
     vending_machine.changes_if_purchase(Drink::COKE)[0].money.should == Money::TEN
     vending_machine.changes_if_purchase(Drink::COKE)[0].stock.should == 3
@@ -290,12 +290,12 @@ describe VendingMachine do
     vending_machine.drink_stock(Drink::COKE).should == 4
     vending_machine.amount_of_money_stocks.should == 150
   end
-  
- it "150円でコーラを買おうとするがお釣りがないので買えない、無理矢理買おうとしても無理＞＜" do
+
+  it "150円でコーラを買おうとするがお釣りがないので買えない、無理矢理買おうとしても無理＞＜" do
     vending_machine.refill_drink_stock(Drink::COKE, 5)
 
     vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
-  
+
     vending_machine.purchase?(Drink::COKE).should be_false
 
     proc {
@@ -318,7 +318,7 @@ describe VendingMachine do
     vending_machine.refill_drink_stock(Drink::WATER, 5)
 
     vending_machine.drop_in(Money::HUNDRED, Money::FIFTY)
-  
+
     vending_machine.purchase?(Drink::COKE).should be_true
     vending_machine.changes_if_purchase(Drink::COKE)[0].money.should == Money::TEN
     vending_machine.changes_if_purchase(Drink::COKE)[0].stock.should == 3
@@ -364,7 +364,7 @@ describe VendingMachine do
         vending_machine.changes(60)[1].stock.should == 1
         vending_machine.new_money_stock_after_change(60)[0].money.should == Money::TEN
         vending_machine.new_money_stock_after_change(60)[0].stock.should == 1
-        end
+      end
     end
 
     context "お釣りが払えない場合" do
@@ -379,43 +379,43 @@ describe VendingMachine do
     it "当たり判定オン、コーラの在庫が2個あり、当たり" do
       vending_machine.bingo_on = true
       vending_machine.refill_drink_stock(Drink::COKE, 2)
-      
+
       def vending_machine.rand100
         4
       end
-      
+
       vending_machine.bingo?(Drink::COKE).should be_true
     end
 
     it "当たり判定オフ(デフォルト)、コーラの在庫が2個あり、はずれ" do
       vending_machine.refill_drink_stock(Drink::COKE, 2)
-      
+
       def vending_machine.rand100
         4
       end
-      
+
       vending_machine.bingo?(Drink::COKE).should be_false
     end
 
     it "当たり判定オン、コーラの在庫が1個あり、はずれ" do
       vending_machine.bingo_on = true
       vending_machine.refill_drink_stock(Drink::COKE, 1)
-      
+
       def vending_machine.rand100
         4
       end
-      
+
       vending_machine.bingo?(Drink::COKE).should be_false
     end
 
     it "当たり判定オン、コーラの在庫が2個あり、5%に嵌まらなかった、はずれ" do
       vending_machine.bingo_on = true
       vending_machine.refill_drink_stock(Drink::COKE, 2)
-      
+
       def vending_machine.rand100
         5
       end
-      
+
       vending_machine.bingo?(Drink::COKE).should be_false
     end
   end

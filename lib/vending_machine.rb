@@ -181,7 +181,7 @@ class VendingMachine
 
   def purchase(drink) 
     raise ArgumentError, drink unless purchase?(drink)
-    
+
     @money_stocks = new_money_stock_after_change(amount_of_drop_in - drink.value)
     @drop_in_money_stocks.each { |drop_in_money_stock| drop_in_money_stock.stock = 0 }
 
@@ -199,9 +199,9 @@ class VendingMachine
   def bingo?(drink)
     bingo_on && drink_stock(drink) >= 2 && rand100 < 5
   end
- 
+
   def rand100
-      rand(100)
+    rand(100)
   end
 
   def amount_of_bingos
