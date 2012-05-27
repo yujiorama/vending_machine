@@ -17,6 +17,17 @@ module Money
   THOUSAND = Money.new(1000)
 end
 
+class MoneyStock
+  attr :money
+  attr_accessor :stock
+
+  def initialize(money, stock)
+    @money = money
+    @stock = stock
+  end
+end
+
+
 module Drink
   class Drink
     attr :id
@@ -35,59 +46,74 @@ module Drink
   WATER = Drink.new(3, "水", 100)
 end
 
+class DrinkStock
+  attr :drink
+  attr_accessor :stock
+
+  def initialize(drink, stock)
+    @drink = drink
+    @stock = stock
+  end
+end
+
 class VendingMachine
+  attr :earnings
+
   def initialize
-    @valid_money = [Money::TEN, Money::FIFTY, Money::HUNDRED, Money::FIVE_HUNDRED, Money::THOUSAND]
-    @amount = 0
-    @stock = {}
+    @valid_moneis = [Money::TEN, Money::FIFTY, Money::HUNDRED, Money::FIVE_HUNDRED, Money::THOUSAND]
+    
+    @money_stocks = @valid_moneis.map {|money| MoneyStock.new(money, 0)}
+
+    @drop_in_money_stocks = @valid_moneis.map {|money| MoneyStock.new(money, 0)}
+
+    @drink_stocks = [DrinkStock.new(Drink::COKE, 0), DrinkStock.new(Drink::RED_BULL, 0), DrinkStock.new(Drink::WATER, 0)]
+
     @earnings = 0
   end
 
   def amount_of_drop_in
-    @amount
+    @drop_in_money_stocks.inject(0) { |amount, drop_in_money_stock| amount += drop_in_money_stock.money.value * drop_in_money_stock.stock }
   end
 
-  def drop_in(*money)
-    @amount += money.inject(0) do |sum, item|
-      unless @valid_money.include?(item)
-        raise ArgumentError, item.value
-      end
-      sum += item.value
-    end
+  def drop_in(*moneis)
+    moneis.each { |money| raise ArgumentError, money.value unless @valid_moneis.include?(money) }
+
+    moneis.each { |money| find_drop_in_money_stock(money).stock += 1 } 
   end
 
-  def refill(drink, number_of_pieces) 
-    @stock[drink] = number_of_pieces
+  def find_drop_in_money_stock(money)
+    @drop_in_money_stocks.find { |money_stock| money_stock.money == money }
   end
 
-  def stock?(drink)
-    @stock.key?(drink) && @stock[drink] > 0
+
+  def refill_drink_stock(drink, number_of_pieces) 
+    find_drink_stock(drink).stock += number_of_pieces
   end
 
-  def stock(drink)
-    @stock.key?(drink) ? @stock[drink] : 0
+  def drink_stock?(drink)
+    find_drink_stock(drink).stock > 0
+  end
+
+  def drink_stock(drink)
+    find_drink_stock(drink).stock 
+  end
+
+  def find_drink_stock(drink)
+    @drink_stocks.find { |drink_stock| drink_stock.drink == drink }
   end
 
   def purchaseable_drinks
-    drinks = []
-    @stock.keys.each do |drink|
-      if stock?(drink)
-        if drink.value <= amount_of_drop_in()
-          drinks << drink.id
-        end
-      end
-    end
-    drinks 
+    @drink_stocks.inject([]) { |drinks, drink_stock| 
+      drinks << drink_stock.drink if drink_stock?(drink_stock.drink) && drink_stock.drink.value <= amount_of_drop_in() 
+      drinks
+    }
   end
 
   def purchase(drink) 
-    @stock[drink] = stock(drink) - 1
-    @earnings += drink.value
-    @amount = 0
-  end
+    raise ArgumentError, drink unless purchaseable_drinks.include?(drink)
 
-  def earnings
-    @earnings
+    find_drink_stock(drink).stock = drink_stock(drink) - 1
+    @earnings += drink.value
+    @drop_in_money_stocks.each { |drop_in_money_stock| drop_in_money_stock.stock = 0 }
   end
 end
-
